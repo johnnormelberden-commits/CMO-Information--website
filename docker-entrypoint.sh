@@ -2,36 +2,17 @@
 
 set -e
 
-# ============================================================
-# APACHE MODULES
-# ============================================================
+# Railway provides the web PORT automatically.
+# If PORT is not available, use 80.
+PORT="${PORT:-80}"
 
-a2dismod mpm_event mpm_worker mpm_prefork || true
-a2enmod mpm_prefork
+echo "Starting Apache on port ${PORT}"
 
-# ============================================================
-# RAILWAY PORT
-# ============================================================
-# Railway provides PORT for the web application.
-# If PORT is not available, use 8080.
-# ============================================================
+# Make sure Apache uses the Railway PORT
+sed -i "s/^Listen .*/Listen ${PORT}/" /etc/apache2/ports.conf
 
-APP_PORT="${PORT:-8080}"
+sed -i "s/<VirtualHost \*:[0-9]\+>/<VirtualHost *:${PORT}>/" \
+    /etc/apache2/sites-available/000-default.conf
 
-echo "Starting Apache on port ${APP_PORT}"
-
-# ============================================================
-# CONFIGURE APACHE PORT
-# ============================================================
-
-sed -i "s/^Listen .*/Listen ${APP_PORT}/" /etc/apache2/ports.conf
-
-sed -i \
-  "s/<VirtualHost \*:[0-9]*>/<VirtualHost *:${APP_PORT}>/" \
-  /etc/apache2/sites-available/000-default.conf
-
-# ============================================================
-# START APACHE
-# ============================================================
-
+# Start Apache
 exec apache2-foreground
