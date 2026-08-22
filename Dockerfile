@@ -4,4 +4,6 @@ RUN docker-php-ext-install mysqli
 
 COPY . /var/www/html/
 
+RUN apache2ctl -M || true
+
 EXPOSE 80
