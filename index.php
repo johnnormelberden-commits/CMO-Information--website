@@ -3,28 +3,67 @@
 // RAILWAY MYSQL DATABASE CONNECTION
 // ============================================================
 
-// Get Railway environment variables
-$dbHost = getenv('MYSQLHOST') ?: '';
-$dbPort = getenv('MYSQLPORT') ?: '3306';
-$dbUser = getenv('MYSQLUSER') ?: '';
-$dbPassword = getenv('MYSQLPASSWORD') ?: '';
-$dbName = getenv('MYSQLDATABASE') ?: '';
+// ------------------------------------------------------------
+// Function to safely get Railway environment variables
+// ------------------------------------------------------------
+function getRailwayVariable($name)
+{
+    // First try getenv()
+    $value = getenv($name);
 
-// Fallback: Railway may also provide MYSQL_DATABASE
-if ($dbName === '') {
-    $dbName = getenv('MYSQL_DATABASE') ?: '';
+    if ($value !== false && trim($value) !== '') {
+        return trim($value);
+    }
+
+    // Then try $_ENV
+    if (isset($_ENV[$name]) && trim($_ENV[$name]) !== '') {
+        return trim($_ENV[$name]);
+    }
+
+    // Then try $_SERVER
+    if (isset($_SERVER[$name]) && trim($_SERVER[$name]) !== '') {
+        return trim($_SERVER[$name]);
+    }
+
+    return '';
 }
-
-// Remove accidental spaces
-$dbHost = trim($dbHost);
-$dbPort = trim($dbPort);
-$dbUser = trim($dbUser);
-$dbPassword = trim($dbPassword);
-$dbName = trim($dbName);
 
 
 // ============================================================
-// CHECK DATABASE VARIABLES
+// GET MYSQL VARIABLES
+// ============================================================
+
+$dbHost = getRailwayVariable('MYSQLHOST');
+
+$dbPort = getRailwayVariable('MYSQLPORT');
+
+$dbUser = getRailwayVariable('MYSQLUSER');
+
+$dbPassword = getRailwayVariable('MYSQLPASSWORD');
+
+$dbName = getRailwayVariable('MYSQLDATABASE');
+
+
+// ============================================================
+// FALLBACK FOR MYSQL_DATABASE
+// ============================================================
+
+if ($dbName === '') {
+    $dbName = getRailwayVariable('MYSQL_DATABASE');
+}
+
+
+// ============================================================
+// DEFAULT MYSQL PORT
+// ============================================================
+
+if ($dbPort === '') {
+    $dbPort = '3306';
+}
+
+
+// ============================================================
+// CHECK REQUIRED VARIABLES
 // ============================================================
 
 $missingVariables = [];
@@ -45,10 +84,6 @@ if ($dbName === '') {
     $missingVariables[] = 'MYSQLDATABASE or MYSQL_DATABASE';
 }
 
-if ($dbPort === '') {
-    $dbPort = '3306';
-}
-
 
 // ============================================================
 // STOP IF VARIABLES ARE MISSING
@@ -58,10 +93,19 @@ if (!empty($missingVariables)) {
 
     die(
         '<!DOCTYPE html>
-        <html>
+        <html lang="en">
+
         <head>
-            <title>Database Configuration Error</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+            <meta charset="UTF-8">
+
+            <meta name="viewport"
+                  content="width=device-width, initial-scale=1.0">
+
+            <title>
+                Database Configuration Error
+            </title>
+
         </head>
 
         <body style="
@@ -95,9 +139,11 @@ if (!empty($missingVariables)) {
                     '',
                     array_map(
                         function ($variable) {
+
                             return '<li>' .
                                 htmlspecialchars($variable) .
                                 '</li>';
+
                         },
                         $missingVariables
                     )
@@ -111,14 +157,27 @@ if (!empty($missingVariables)) {
                     PHP/Web service.
                 </p>
 
+                <p>
+                    The expected variables are:
+                </p>
+
+                <ul>
+                    <li>MYSQLHOST</li>
+                    <li>MYSQLPORT</li>
+                    <li>MYSQLUSER</li>
+                    <li>MYSQLPASSWORD</li>
+                    <li>MYSQLDATABASE</li>
+                </ul>
+
                 <p style="color:#58a6ff;">
-                    After changing Railway Variables, redeploy or
-                    restart the PHP service.
+                    After changing Railway Variables,
+                    redeploy or restart the PHP service.
                 </p>
 
             </div>
 
         </body>
+
         </html>'
     );
 }
@@ -128,7 +187,6 @@ if (!empty($missingVariables)) {
 // CONNECT TO MYSQL
 // ============================================================
 
-// Do not expose database password in error messages
 mysqli_report(MYSQLI_REPORT_OFF);
 
 $connection = new mysqli(
@@ -148,10 +206,20 @@ if ($connection->connect_error) {
 
     die(
         '<!DOCTYPE html>
-        <html>
+
+        <html lang="en">
+
         <head>
-            <title>Database Connection Error</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+            <meta charset="UTF-8">
+
+            <meta name="viewport"
+                  content="width=device-width, initial-scale=1.0">
+
+            <title>
+                Database Connection Error
+            </title>
+
         </head>
 
         <body style="
@@ -178,21 +246,49 @@ if ($connection->connect_error) {
                     MySQL returned:
                 </p>
 
-                <p style="color:#ffd700;">
+                <p style="
+                    color:#ffd700;
+                    word-break:break-word;
+                ">
                     ' .
-                    htmlspecialchars($connection->connect_error) .
+                    htmlspecialchars(
+                        $connection->connect_error
+                    ) .
                     '
                 </p>
 
                 <p>
-                    Check the Railway MySQL connection settings,
-                    especially MYSQLHOST, MYSQLPORT, MYSQLUSER,
-                    MYSQLPASSWORD, and MYSQLDATABASE.
+                    Please check your Railway MySQL Variables:
                 </p>
+
+                <ul>
+
+                    <li>
+                        MYSQLHOST
+                    </li>
+
+                    <li>
+                        MYSQLPORT
+                    </li>
+
+                    <li>
+                        MYSQLUSER
+                    </li>
+
+                    <li>
+                        MYSQLPASSWORD
+                    </li>
+
+                    <li>
+                        MYSQLDATABASE
+                    </li>
+
+                </ul>
 
             </div>
 
         </body>
+
         </html>'
     );
 }
@@ -222,10 +318,20 @@ if (!$result) {
 
     die(
         '<!DOCTYPE html>
-        <html>
+
+        <html lang="en">
+
         <head>
-            <title>Database Query Error</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+            <meta charset="UTF-8">
+
+            <meta name="viewport"
+                  content="width=device-width, initial-scale=1.0">
+
+            <title>
+                Database Query Error
+            </title>
+
         </head>
 
         <body style="
@@ -250,7 +356,9 @@ if (!$result) {
 
                 <p style="color:#ffd700;">
                     ' .
-                    htmlspecialchars($connection->error) .
+                    htmlspecialchars(
+                        $connection->error
+                    ) .
                     '
                 </p>
 
@@ -263,12 +371,15 @@ if (!$result) {
             </div>
 
         </body>
+
         </html>'
     );
 }
 
 ?>
+
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
@@ -284,94 +395,108 @@ if (!$result) {
 
 
     <!-- ======================================================
-         BOOTSTRAP
+         BOOTSTRAP CSS
     ======================================================= -->
 
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+    >
 
 
     <!-- ======================================================
-         DATATABLES
+         DATATABLES CSS
     ======================================================= -->
 
-    <link rel="stylesheet"
-          href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+    <link
+        rel="stylesheet"
+        href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css"
+    >
 
 
     <!-- ======================================================
-         DATATABLES BUTTONS
+         DATATABLES BUTTONS CSS
     ======================================================= -->
 
-    <link rel="stylesheet"
-          href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
+    <link
+        rel="stylesheet"
+        href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css"
+    >
 
 
     <style>
 
         body {
-            background: linear-gradient(
-                135deg,
-                #0d1117,
-                #1b2838
-            );
 
-            color: #e0e0e0;
+            background:
+                linear-gradient(
+                    135deg,
+                    #0d1117,
+                    #1b2838
+                );
 
-            font-family: 'Poppins', sans-serif;
+            color:#e0e0e0;
 
-            min-height: 100vh;
+            font-family:
+                'Poppins',
+                sans-serif;
 
-            margin: 0;
+            min-height:100vh;
+
+            margin:0;
         }
 
 
-        /* ==================================================
+        /* ====================================================
            PAF HEADER
-        ================================================== */
+        ==================================================== */
 
         .paf-topbar {
 
-            width: 100%;
+            width:100%;
 
-            padding: 15px 40px;
+            padding:15px 40px;
 
-            background: rgba(0, 40, 90, 0.45);
+            background:
+                rgba(0,40,90,0.45);
 
-            backdrop-filter: blur(12px);
+            backdrop-filter:
+                blur(12px);
 
-            border-bottom: 2px solid #ffd700;
+            border-bottom:
+                2px solid #ffd700;
 
-            display: flex;
+            display:flex;
 
-            align-items: center;
+            align-items:center;
 
-            justify-content: space-between;
+            justify-content:space-between;
 
             box-shadow:
-                0 5px 20px rgba(0,0,0,0.6);
+                0 5px 20px
+                rgba(0,0,0,0.6);
         }
 
 
         .paf-brand {
 
-            display: flex;
+            display:flex;
 
-            align-items: center;
+            align-items:center;
 
-            gap: 15px;
+            gap:15px;
         }
 
 
         .paf-brand img {
 
-            height: 70px;
+            height:70px;
 
-            width: 70px;
+            width:70px;
 
-            object-fit: contain;
+            object-fit:contain;
 
-            transition: 0.4s;
+            transition:0.4s;
         }
 
 
@@ -390,78 +515,78 @@ if (!$result) {
 
         .paf-text h1 {
 
-            margin: 0;
+            margin:0;
 
-            font-size: 1.5rem;
+            font-size:1.5rem;
 
-            font-weight: 700;
+            font-weight:700;
 
-            color: #ffffff;
+            color:#ffffff;
 
-            letter-spacing: 1px;
+            letter-spacing:1px;
 
-            text-transform: uppercase;
+            text-transform:uppercase;
         }
 
 
         .paf-text span {
 
-            font-size: 0.9rem;
+            font-size:0.9rem;
 
-            color: #ffd700;
+            color:#ffd700;
         }
 
 
         .logout-btn {
 
-            font-size: 0.9rem;
+            font-size:0.9rem;
 
-            padding: 6px 14px;
+            padding:6px 14px;
 
-            border-radius: 20px;
+            border-radius:20px;
         }
 
 
         .export-menu-btn {
 
-            font-size: 18px;
+            font-size:18px;
 
-            padding: 6px 10px;
+            padding:6px 10px;
 
-            border-radius: 50%;
+            border-radius:50%;
 
-            line-height: 1;
+            line-height:1;
         }
 
 
-        /* ==================================================
+        /* ====================================================
            MAIN CONTAINER
-        ================================================== */
+        ==================================================== */
 
         .container-main {
 
             background:
                 rgba(255,255,255,0.05);
 
-            border-radius: 15px;
+            border-radius:15px;
 
-            padding: 40px;
+            padding:40px;
 
             box-shadow:
                 0 8px 32px
                 rgba(0,0,0,0.3);
 
-            margin-top: 40px;
+            margin-top:40px;
         }
 
 
         h2 {
 
-            color: #58a6ff;
+            color:#58a6ff;
 
-            font-weight: 600;
+            font-weight:600;
 
-            margin-bottom: 25px;
+            margin-bottom:25px;
         }
 
 
@@ -474,32 +599,32 @@ if (!$result) {
                     #00b4d8
                 );
 
-            border: none;
+            border:none;
 
-            transition: 0.3s;
+            transition:0.3s;
         }
 
 
         .btn-primary:hover {
 
-            opacity: 0.9;
+            opacity:0.9;
         }
 
 
-        /* ==================================================
+        /* ====================================================
            TABLE
-        ================================================== */
+        ==================================================== */
 
         .table {
 
-            color: #e0e0e0;
+            color:#e0e0e0;
 
             background-color:
                 rgba(255,255,255,0.05);
 
-            border-radius: 10px;
+            border-radius:10px;
 
-            overflow: hidden;
+            overflow:hidden;
         }
 
 
@@ -508,26 +633,26 @@ if (!$result) {
             background-color:
                 rgba(0,123,255,0.2);
 
-            color: #58a6ff;
+            color:#58a6ff;
 
-            text-transform: uppercase;
+            text-transform:uppercase;
         }
 
 
         .table td,
         .table th {
 
-            text-align: center;
+            text-align:center;
 
-            vertical-align: middle;
+            vertical-align:middle;
         }
 
 
         .no-wrap {
 
-            white-space: nowrap;
+            white-space:nowrap;
 
-            min-width: 180px;
+            min-width:180px;
         }
 
 
@@ -535,7 +660,7 @@ if (!$result) {
 
         .dt-buttons {
 
-            display: none !important;
+            display:none !important;
         }
 
 
@@ -543,9 +668,9 @@ if (!$result) {
 
         .dataTables_length {
 
-            float: left;
+            float:left;
 
-            margin-bottom: 20px;
+            margin-bottom:20px;
         }
 
 
@@ -553,9 +678,9 @@ if (!$result) {
 
         .dataTables_filter {
 
-            float: right;
+            float:right;
 
-            text-align: right;
+            text-align:right;
         }
 
 
@@ -563,11 +688,11 @@ if (!$result) {
 
         .dataTables_wrapper .row:nth-child(1) {
 
-            display: flex;
+            display:flex;
 
-            justify-content: space-between;
+            justify-content:space-between;
 
-            align-items: center;
+            align-items:center;
         }
 
     </style>
@@ -585,7 +710,7 @@ if (!$result) {
 <div class="paf-topbar">
 
 
-    <!-- LEFT -->
+    <!-- LEFT SIDE -->
 
     <div class="paf-brand">
 
@@ -610,7 +735,7 @@ if (!$result) {
     </div>
 
 
-    <!-- RIGHT -->
+    <!-- RIGHT SIDE -->
 
     <div class="d-flex align-items-center gap-2">
 
@@ -716,7 +841,9 @@ if (!$result) {
 <div class="container container-main">
 
 
-    <!-- SUCCESS MESSAGE -->
+    <!-- ======================================================
+         DELETE SUCCESS MESSAGE
+    ======================================================= -->
 
     <?php if (isset($_GET['deleted'])): ?>
 
@@ -729,12 +856,14 @@ if (!$result) {
     <?php endif; ?>
 
 
+    <!-- TITLE -->
+
     <h2>
         Military Personnel Information
     </h2>
 
 
-    <!-- ADD PERSONNEL -->
+    <!-- ADD NEW PERSONNEL -->
 
     <a
         class="btn btn-primary mb-3"
@@ -756,6 +885,10 @@ if (!$result) {
             id="personnelTable"
             class="table table-hover table-striped">
 
+
+            <!-- ==================================================
+                 TABLE HEADER
+            =================================================== -->
 
             <thead>
 
@@ -789,7 +922,7 @@ if (!$result) {
 
 
             <!-- ==================================================
-                 T BODY
+                 TABLE BODY
             =================================================== -->
 
             <tbody>
@@ -843,7 +976,7 @@ if (!$result) {
                         </td>
 
 
-                        <!-- BRANCH -->
+                        <!-- BRANCH OF SERVICE -->
 
                         <td>
 
@@ -887,13 +1020,17 @@ if (!$result) {
                         </td>
 
 
-                        <!-- CREATED -->
+                        <!-- CREATED AT -->
 
                         <td>
 
                             <?php
 
-                            if (!empty($row['created_at'])) {
+                            if (
+                                !empty(
+                                    $row['created_at']
+                                )
+                            ) {
 
                                 echo date(
                                     'F d, Y h:i A',
@@ -909,13 +1046,17 @@ if (!$result) {
                         </td>
 
 
-                        <!-- UPDATED -->
+                        <!-- UPDATED AT -->
 
                         <td>
 
                             <?php
 
-                            if (!empty($row['updated_at'])) {
+                            if (
+                                !empty(
+                                    $row['updated_at']
+                                )
+                            ) {
 
                                 echo date(
                                     'F d, Y h:i A',
@@ -1007,6 +1148,8 @@ if (!$result) {
             ">
 
 
+            <!-- MODAL HEADER -->
+
             <div class="modal-header">
 
                 <h5 class="modal-title">
@@ -1020,10 +1163,13 @@ if (!$result) {
                     type="button"
                     class="btn-close btn-close-white"
                     data-bs-dismiss="modal">
+
                 </button>
 
             </div>
 
+
+            <!-- MODAL BODY -->
 
             <div class="modal-body">
 
@@ -1034,10 +1180,13 @@ if (!$result) {
                 <strong
                     id="deletePersonName"
                     style="color:#ffd700;">
+
                 </strong>
 
             </div>
 
+
+            <!-- MODAL FOOTER -->
 
             <div class="modal-footer">
 
@@ -1075,30 +1224,64 @@ if (!$result) {
      JAVASCRIPT
 =========================================================== -->
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-
-<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-
-<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script
+    src="https://code.jquery.com/jquery-3.7.1.min.js">
+</script>
 
 
-<!-- DATATABLE BUTTONS -->
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js">
+</script>
 
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
 
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+<script
+    src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js">
+</script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script
+    src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js">
+</script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
 
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+<!-- ==========================================================
+     DATATABLE BUTTONS
+=========================================================== -->
+
+<script
+    src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js">
+</script>
+
+
+<script
+    src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js">
+</script>
+
+
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js">
+</script>
+
+
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js">
+</script>
+
+
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js">
+</script>
+
+
+<script
+    src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js">
+</script>
+
+
+<script
+    src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js">
+</script>
 
 
 
@@ -1111,51 +1294,59 @@ $(document).ready(function () {
     // DATATABLE
     // ========================================================
 
-    var table = $('#personnelTable').DataTable({
+    var table =
+        $('#personnelTable').DataTable({
 
-        order: [[0, 'asc']],
+            order: [
+                [0, 'asc']
+            ],
 
-        pageLength: 5,
+            pageLength: 5,
 
-        lengthMenu: [5, 10, 25, 50],
+            lengthMenu: [
+                5,
+                10,
+                25,
+                50
+            ],
 
-        dom: 'lBfrtip',
-
-
-        buttons: [
-
-            {
-                extend: 'excelHtml5',
-
-                title:
-                    'Military Personnel Information'
-            },
+            dom: 'lBfrtip',
 
 
-            {
-                extend: 'pdfHtml5',
+            buttons: [
 
-                title:
-                    'Military Personnel Information',
+                {
+                    extend: 'excelHtml5',
 
-                orientation:
-                    'landscape',
-
-                pageSize:
-                    'A4'
-            },
+                    title:
+                        'Military Personnel Information'
+                },
 
 
-            {
-                extend: 'print',
+                {
+                    extend: 'pdfHtml5',
 
-                title:
-                    'Military Personnel Information'
-            }
+                    title:
+                        'Military Personnel Information',
 
-        ]
+                    orientation:
+                        'landscape',
 
-    });
+                    pageSize:
+                        'A4'
+                },
+
+
+                {
+                    extend: 'print',
+
+                    title:
+                        'Military Personnel Information'
+                }
+
+            ]
+
+        });
 
 
 
@@ -1263,16 +1454,24 @@ $(document).ready(function () {
                 $(this).data('name');
 
 
+            // Show personnel name
+
             deletePersonName.textContent =
                 name
                     ? 'Personnel: ' + name
                     : '';
 
 
+
+            // Delete URL
+
             confirmDeleteBtn.href =
                 '/airforceinfo/delete.php?id=' +
                 encodeURIComponent(id);
 
+
+
+            // Show modal
 
             deleteModal.show();
 
