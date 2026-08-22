@@ -236,54 +236,128 @@
           <th>Action</th>
         </tr>
       </thead>
-      <tbody>
-        <?php
-       $connection = new mysqli(
-        getenv('MYSQLHOST'),
-        getenv('MYSQLUSER'),
-        getenv('MYSQLPASSWORD'),
-        getenv('MYSQLDATABASE'),
-        getenv('MYSQLPORT')
+ <tbody>
+<?php
+
+// ========================================
+// RAILWAY MYSQL DATABASE CONNECTION
+// ========================================
+
+$dbHost = getenv('MYSQLHOST');
+$dbPort = getenv('MYSQLPORT') ?: '3306';
+$dbUser = getenv('MYSQLUSER');
+$dbPassword = getenv('MYSQLPASSWORD');
+$dbName = getenv('MYSQLDATABASE');
+
+// Check if the required Railway variables exist
+if (!$dbHost || !$dbUser || !$dbName) {
+    die(
+        "Database configuration is missing. " .
+        "Please check MYSQLHOST, MYSQLPORT, MYSQLUSER, MYSQLPASSWORD, and MYSQLDATABASE " .
+        "in your Railway service Variables."
     );
+}
 
-        if ($connection->connect_error) {
-            die("Connection failed: " . $connection->connect_error);
-        }
+// Connect to Railway MySQL
+$connection = new mysqli(
+    $dbHost,
+    $dbUser,
+    $dbPassword,
+    $dbName,
+    (int)$dbPort
+);
 
-        $sql = "SELECT * FROM military_personnel";
-        $result = $connection->query($sql);
+// Check database connection
+if ($connection->connect_error) {
+    die("Database connection failed: " . $connection->connect_error);
+}
 
-        if (!$result) {
-            die("Invalid query: " . $connection->error);
-        }
+// Use UTF-8
+$connection->set_charset("utf8mb4");
 
-        while ($row = $result->fetch_assoc()): ?>
-          <tr>
-            <td><?= $row['id']; ?></td>
-            <td><?= htmlspecialchars($row['rank']); ?></td>
-            <td class="no-wrap"><?= htmlspecialchars($row['name']); ?></td>
-            <td><?= htmlspecialchars($row['serial_number']); ?></td>
-            <td><?= htmlspecialchars($row['branch_of_service']); ?></td>
-            <td><?= htmlspecialchars($row['courses']); ?></td>
-            <td><?= htmlspecialchars($row['year_graduated']); ?></td>
-            <td><?= htmlspecialchars($row['standing']); ?></td>
-            <td><?= date('F d, Y h:i A', strtotime($row['created_at'])); ?></td>
-            <td><?= date('F d, Y h:i A', strtotime($row['updated_at'])); ?></td>
-            <td>
-              <a class="btn btn-primary btn-sm" href="/airforceinfo/edit.php?id=<?= $row['id']; ?>">Update</a>
-              <!-- Delete uses confirmation modal -->
-              <button 
-                type="button"
-                class="btn btn-danger btn-sm btn-delete"
-                data-id="<?= $row['id']; ?>"
-                data-name="<?= htmlspecialchars($row['name'], ENT_QUOTES); ?>">
-                Delete
-              </button>
-            </td>
-          </tr>
-        <?php endwhile; ?>
-      </tbody>
-    </table>
+// ========================================
+// GET PERSONNEL RECORDS
+// ========================================
+
+$sql = "SELECT * FROM military_personnel";
+$result = $connection->query($sql);
+
+if (!$result) {
+    die("Invalid query: " . $connection->error);
+}
+
+while ($row = $result->fetch_assoc()):
+?>
+
+<tr>
+    <td><?= htmlspecialchars($row['id']); ?></td>
+
+    <td><?= htmlspecialchars($row['rank']); ?></td>
+
+    <td class="no-wrap">
+        <?= htmlspecialchars($row['name']); ?>
+    </td>
+
+    <td>
+        <?= htmlspecialchars($row['serial_number']); ?>
+    </td>
+
+    <td>
+        <?= htmlspecialchars($row['branch_of_service']); ?>
+    </td>
+
+    <td>
+        <?= htmlspecialchars($row['courses']); ?>
+    </td>
+
+    <td>
+        <?= htmlspecialchars($row['year_graduated']); ?>
+    </td>
+
+    <td>
+        <?= htmlspecialchars($row['standing']); ?>
+    </td>
+
+    <td>
+        <?= date(
+            'F d, Y h:i A',
+            strtotime($row['created_at'])
+        ); ?>
+    </td>
+
+    <td>
+        <?= date(
+            'F d, Y h:i A',
+            strtotime($row['updated_at'])
+        ); ?>
+    </td>
+
+    <td>
+
+        <!-- UPDATE -->
+        <a
+            class="btn btn-primary btn-sm"
+            href="/airforceinfo/edit.php?id=<?= urlencode($row['id']); ?>"
+        >
+            Update
+        </a>
+
+        <!-- DELETE -->
+        <button
+            type="button"
+            class="btn btn-danger btn-sm btn-delete"
+            data-id="<?= htmlspecialchars($row['id'], ENT_QUOTES); ?>"
+            data-name="<?= htmlspecialchars($row['name'], ENT_QUOTES); ?>"
+        >
+            Delete
+        </button>
+
+    </td>
+</tr>
+
+<?php endwhile; ?>
+
+</tbody>
   </div>
 </div>
 
