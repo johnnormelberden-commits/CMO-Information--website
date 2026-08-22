@@ -1,22 +1,49 @@
 FROM php:8.3-apache-bookworm
 
-# Install MySQL/Mysqli extension
+# ============================================================
+# INSTALL MYSQLI
+# ============================================================
+
 RUN docker-php-ext-install mysqli
 
-# Enable Apache rewrite module
+
+# ============================================================
+# ENABLE APACHE MODULES
+# ============================================================
+
 RUN a2enmod rewrite
 
-# Copy website files
+
+# ============================================================
+# COPY WEBSITE
+# ============================================================
+
 COPY . /var/www/html/
 
-# Copy Railway Apache startup script
+
+# ============================================================
+# COPY RAILWAY APACHE STARTUP SCRIPT
+# ============================================================
+
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-# Make startup script executable
+
+# ============================================================
+# MAKE SCRIPT EXECUTABLE
+# ============================================================
+
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Railway will provide PORT at runtime
-EXPOSE 80
 
-# Start Apache using our script
+# ============================================================
+# RAILWAY PORT
+# ============================================================
+
+EXPOSE 8080
+
+
+# ============================================================
+# STARTUP
+# ============================================================
+
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
