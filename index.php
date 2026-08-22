@@ -238,7 +238,13 @@
       </thead>
       <tbody>
         <?php
-        $connection = new mysqli("localhost", "root", "", "airforce_info");
+       $connection = new mysqli(
+        getenv('MYSQLHOST'),
+        getenv('MYSQLUSER'),
+        getenv('MYSQLPASSWORD'),
+        getenv('MYSQLDATABASE'),
+        getenv('MYSQLPORT')
+    );
 
         if ($connection->connect_error) {
             die("Connection failed: " . $connection->connect_error);
