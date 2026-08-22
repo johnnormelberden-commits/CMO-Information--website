@@ -1,26 +1,28 @@
 <?php
 // ============================================================
+// CMO INFORMATION WEBSITE
 // RAILWAY MYSQL DATABASE CONNECTION
 // ============================================================
 
 // ------------------------------------------------------------
-// Function to safely get Railway environment variables
+// Read Railway environment variables
 // ------------------------------------------------------------
-function getRailwayVariable($name)
+
+function get_env_value($name)
 {
-    // First try getenv()
+    // Try getenv()
     $value = getenv($name);
 
     if ($value !== false && trim($value) !== '') {
         return trim($value);
     }
 
-    // Then try $_ENV
+    // Try $_ENV
     if (isset($_ENV[$name]) && trim($_ENV[$name]) !== '') {
         return trim($_ENV[$name]);
     }
 
-    // Then try $_SERVER
+    // Try $_SERVER
     if (isset($_SERVER[$name]) && trim($_SERVER[$name]) !== '') {
         return trim($_SERVER[$name]);
     }
@@ -29,44 +31,40 @@ function getRailwayVariable($name)
 }
 
 
-// ============================================================
-// GET MYSQL VARIABLES
-// ============================================================
+// ------------------------------------------------------------
+// Get MySQL variables
+// ------------------------------------------------------------
 
-$dbHost = getRailwayVariable('MYSQLHOST');
-
-$dbPort = getRailwayVariable('MYSQLPORT');
-
-$dbUser = getRailwayVariable('MYSQLUSER');
-
-$dbPassword = getRailwayVariable('MYSQLPASSWORD');
-
-$dbName = getRailwayVariable('MYSQLDATABASE');
+$dbHost     = get_env_value('MYSQLHOST');
+$dbPort     = get_env_value('MYSQLPORT');
+$dbUser     = get_env_value('MYSQLUSER');
+$dbPassword = get_env_value('MYSQLPASSWORD');
+$dbName     = get_env_value('MYSQLDATABASE');
 
 
-// ============================================================
-// FALLBACK FOR MYSQL_DATABASE
-// ============================================================
+// ------------------------------------------------------------
+// Support MYSQL_DATABASE as alternative database name
+// ------------------------------------------------------------
 
 if ($dbName === '') {
-    $dbName = getRailwayVariable('MYSQL_DATABASE');
+    $dbName = get_env_value('MYSQL_DATABASE');
 }
 
 
-// ============================================================
-// DEFAULT MYSQL PORT
-// ============================================================
+// ------------------------------------------------------------
+// Default port
+// ------------------------------------------------------------
 
 if ($dbPort === '') {
     $dbPort = '3306';
 }
 
 
-// ============================================================
-// CHECK REQUIRED VARIABLES
-// ============================================================
+// ------------------------------------------------------------
+// Check missing variables
+// ------------------------------------------------------------
 
-$missingVariables = [];
+$missingVariables = array();
 
 if ($dbHost === '') {
     $missingVariables[] = 'MYSQLHOST';
@@ -86,100 +84,138 @@ if ($dbName === '') {
 
 
 // ============================================================
-// STOP IF VARIABLES ARE MISSING
+// DATABASE CONFIGURATION ERROR
 // ============================================================
 
 if (!empty($missingVariables)) {
 
-    die(
-        '<!DOCTYPE html>
-        <html lang="en">
+    die('
+<!DOCTYPE html>
+<html lang="en">
 
-        <head>
+<head>
 
-            <meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-            <meta name="viewport"
-                  content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
-            <title>
-                Database Configuration Error
-            </title>
+    <title>Database Configuration Error</title>
 
-        </head>
+    <style>
 
-        <body style="
-            background:#0d1117;
-            color:#ffffff;
-            padding:40px;
-            font-family:Arial,sans-serif;
-        ">
+        body {
+            margin: 0;
+            padding: 40px;
 
-            <div style="
-                max-width:800px;
-                margin:auto;
-                background:#161b22;
-                border:1px solid #30363d;
-                border-radius:12px;
-                padding:30px;
-            ">
+            background: #0d1117;
 
-                <h2 style="color:#ff6b6b;">
-                    Database configuration is missing
-                </h2>
+            color: #ffffff;
 
-                <p>
-                    The PHP application cannot see the following
-                    Railway environment variable(s):
-                </p>
+            font-family: Arial, sans-serif;
+        }
 
-                <ul style="color:#ffd700;">' .
+        .error-box {
+            max-width: 850px;
 
-                implode(
-                    '',
-                    array_map(
-                        function ($variable) {
+            margin: 40px auto;
 
-                            return '<li>' .
-                                htmlspecialchars($variable) .
-                                '</li>';
+            padding: 35px;
 
-                        },
-                        $missingVariables
-                    )
-                )
+            background: #161b22;
 
-                . '</ul>
+            border: 1px solid #30363d;
 
-                <p>
-                    Make sure these variables are available to the
-                    <strong>CMO INFORMATION WEBSITE</strong>
-                    PHP/Web service.
-                </p>
+            border-radius: 15px;
 
-                <p>
-                    The expected variables are:
-                </p>
+            box-shadow:
+                0 10px 30px
+                rgba(0,0,0,0.5);
+        }
 
-                <ul>
-                    <li>MYSQLHOST</li>
-                    <li>MYSQLPORT</li>
-                    <li>MYSQLUSER</li>
-                    <li>MYSQLPASSWORD</li>
-                    <li>MYSQLDATABASE</li>
-                </ul>
+        h1 {
+            color: #ff6b6b;
+        }
 
-                <p style="color:#58a6ff;">
-                    After changing Railway Variables,
-                    redeploy or restart the PHP service.
-                </p>
+        li {
+            color: #ffd700;
+            margin-bottom: 8px;
+        }
 
-            </div>
+        .info {
+            color: #58a6ff;
+        }
 
-        </body>
+    </style>
 
-        </html>'
-    );
+</head>
+
+<body>
+
+<div class="error-box">
+
+    <h1>
+        Database configuration is missing
+    </h1>
+
+    <p>
+        The PHP application cannot see the following
+        Railway environment variable(s):
+    </p>
+
+    <ul>
+        ' .
+
+        implode(
+            '',
+            array_map(
+                function ($variable) {
+
+                    return '<li>' .
+                           htmlspecialchars($variable) .
+                           '</li>';
+
+                },
+                $missingVariables
+            )
+        )
+
+        . '
+
+    </ul>
+
+    <p>
+        Make sure these variables are available to the
+        <strong>CMO INFORMATION WEBSITE</strong>
+        PHP/Web service.
+    </p>
+
+    <p class="info">
+        Expected variables:
+    </p>
+
+    <ul>
+
+        <li>MYSQLHOST</li>
+        <li>MYSQLPORT</li>
+        <li>MYSQLUSER</li>
+        <li>MYSQLPASSWORD</li>
+        <li>MYSQLDATABASE</li>
+
+    </ul>
+
+    <p class="info">
+        After changing Railway Variables, redeploy or
+        restart the PHP service.
+    </p>
+
+</div>
+
+</body>
+
+</html>
+');
+
 }
 
 
@@ -204,101 +240,88 @@ $connection = new mysqli(
 
 if ($connection->connect_error) {
 
-    die(
-        '<!DOCTYPE html>
+    die('
+<!DOCTYPE html>
+<html lang="en">
 
-        <html lang="en">
+<head>
 
-        <head>
+    <meta charset="UTF-8">
 
-            <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
-            <meta name="viewport"
-                  content="width=device-width, initial-scale=1.0">
+    <title>Database Connection Error</title>
 
-            <title>
-                Database Connection Error
-            </title>
+    <style>
 
-        </head>
+        body {
+            background: #0d1117;
+            color: #ffffff;
+            padding: 40px;
+            font-family: Arial, sans-serif;
+        }
 
-        <body style="
-            background:#0d1117;
-            color:#ffffff;
-            padding:40px;
-            font-family:Arial,sans-serif;
-        ">
+        .error-box {
+            max-width: 850px;
+            margin: 40px auto;
+            padding: 35px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 15px;
+        }
 
-            <div style="
-                max-width:800px;
-                margin:auto;
-                background:#161b22;
-                border:1px solid #30363d;
-                border-radius:12px;
-                padding:30px;
-            ">
+        h1 {
+            color: #ff6b6b;
+        }
 
-                <h2 style="color:#ff6b6b;">
-                    Database connection failed
-                </h2>
+        .error {
+            color: #ffd700;
+        }
 
-                <p>
-                    MySQL returned:
-                </p>
+    </style>
 
-                <p style="
-                    color:#ffd700;
-                    word-break:break-word;
-                ">
-                    ' .
-                    htmlspecialchars(
-                        $connection->connect_error
-                    ) .
-                    '
-                </p>
+</head>
 
-                <p>
-                    Please check your Railway MySQL Variables:
-                </p>
+<body>
 
-                <ul>
+<div class="error-box">
 
-                    <li>
-                        MYSQLHOST
-                    </li>
+    <h1>
+        Database connection failed
+    </h1>
 
-                    <li>
-                        MYSQLPORT
-                    </li>
+    <p>
+        MySQL returned:
+    </p>
 
-                    <li>
-                        MYSQLUSER
-                    </li>
+    <p class="error">
+        ' .
+        htmlspecialchars($connection->connect_error) .
+        '
+    </p>
 
-                    <li>
-                        MYSQLPASSWORD
-                    </li>
+    <p>
+        Check your Railway MySQL variables and make sure
+        the CMO INFORMATION WEBSITE is connected to the
+        MySQL service.
+    </p>
 
-                    <li>
-                        MYSQLDATABASE
-                    </li>
+</div>
 
-                </ul>
+</body>
 
-            </div>
+</html>
+');
 
-        </body>
-
-        </html>'
-    );
 }
 
 
 // ============================================================
-// USE UTF-8
+// UTF-8
 // ============================================================
 
-$connection->set_charset("utf8mb4");
+$connection->set_charset('utf8mb4');
 
 
 // ============================================================
@@ -316,68 +339,79 @@ $result = $connection->query($sql);
 
 if (!$result) {
 
-    die(
-        '<!DOCTYPE html>
+    die('
+<!DOCTYPE html>
+<html lang="en">
 
-        <html lang="en">
+<head>
 
-        <head>
+    <meta charset="UTF-8">
 
-            <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
-            <meta name="viewport"
-                  content="width=device-width, initial-scale=1.0">
+    <title>Database Query Error</title>
 
-            <title>
-                Database Query Error
-            </title>
+    <style>
 
-        </head>
+        body {
+            background: #0d1117;
+            color: #ffffff;
+            padding: 40px;
+            font-family: Arial, sans-serif;
+        }
 
-        <body style="
-            background:#0d1117;
-            color:#ffffff;
-            padding:40px;
-            font-family:Arial,sans-serif;
-        ">
+        .error-box {
+            max-width: 850px;
+            margin: 40px auto;
+            padding: 35px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 15px;
+        }
 
-            <div style="
-                max-width:800px;
-                margin:auto;
-                background:#161b22;
-                border:1px solid #30363d;
-                border-radius:12px;
-                padding:30px;
-            ">
+        h1 {
+            color: #ff6b6b;
+        }
 
-                <h2 style="color:#ff6b6b;">
-                    Database query failed
-                </h2>
+        .error {
+            color: #ffd700;
+        }
 
-                <p style="color:#ffd700;">
-                    ' .
-                    htmlspecialchars(
-                        $connection->error
-                    ) .
-                    '
-                </p>
+    </style>
 
-                <p>
-                    Make sure the table
-                    <strong>military_personnel</strong>
-                    exists in your Railway MySQL database.
-                </p>
+</head>
 
-            </div>
+<body>
 
-        </body>
+<div class="error-box">
 
-        </html>'
-    );
+    <h1>
+        Database query failed
+    </h1>
+
+    <p class="error">
+        ' .
+        htmlspecialchars($connection->error) .
+        '
+    </p>
+
+    <p>
+        Make sure the table
+        <strong>military_personnel</strong>
+        exists in your Railway MySQL database.
+    </p>
+
+</div>
+
+</body>
+
+</html>
+');
+
 }
 
 ?>
-
 <!DOCTYPE html>
 
 <html lang="en">
@@ -394,9 +428,9 @@ if (!$result) {
     </title>
 
 
-    <!-- ======================================================
-         BOOTSTRAP CSS
-    ======================================================= -->
+    <!-- =====================================================
+         BOOTSTRAP
+    ====================================================== -->
 
     <link
         rel="stylesheet"
@@ -404,9 +438,9 @@ if (!$result) {
     >
 
 
-    <!-- ======================================================
-         DATATABLES CSS
-    ======================================================= -->
+    <!-- =====================================================
+         DATATABLES
+    ====================================================== -->
 
     <link
         rel="stylesheet"
@@ -414,9 +448,9 @@ if (!$result) {
     >
 
 
-    <!-- ======================================================
-         DATATABLES BUTTONS CSS
-    ======================================================= -->
+    <!-- =====================================================
+         DATATABLES BUTTONS
+    ====================================================== -->
 
     <link
         rel="stylesheet"
@@ -435,27 +469,27 @@ if (!$result) {
                     #1b2838
                 );
 
-            color:#e0e0e0;
+            color: #e0e0e0;
 
             font-family:
                 'Poppins',
                 sans-serif;
 
-            min-height:100vh;
+            min-height: 100vh;
 
-            margin:0;
+            margin: 0;
         }
 
 
-        /* ====================================================
+        /* =====================================================
            PAF HEADER
-        ==================================================== */
+        ====================================================== */
 
         .paf-topbar {
 
-            width:100%;
+            width: 100%;
 
-            padding:15px 40px;
+            padding: 15px 40px;
 
             background:
                 rgba(0,40,90,0.45);
@@ -466,11 +500,12 @@ if (!$result) {
             border-bottom:
                 2px solid #ffd700;
 
-            display:flex;
+            display: flex;
 
-            align-items:center;
+            align-items: center;
 
-            justify-content:space-between;
+            justify-content:
+                space-between;
 
             box-shadow:
                 0 5px 20px
@@ -480,23 +515,23 @@ if (!$result) {
 
         .paf-brand {
 
-            display:flex;
+            display: flex;
 
-            align-items:center;
+            align-items: center;
 
-            gap:15px;
+            gap: 15px;
         }
 
 
         .paf-brand img {
 
-            height:70px;
+            height: 70px;
 
-            width:70px;
+            width: 70px;
 
-            object-fit:contain;
+            object-fit: contain;
 
-            transition:0.4s;
+            transition: 0.4s;
         }
 
 
@@ -515,78 +550,79 @@ if (!$result) {
 
         .paf-text h1 {
 
-            margin:0;
+            margin: 0;
 
-            font-size:1.5rem;
+            font-size: 1.5rem;
 
-            font-weight:700;
+            font-weight: 700;
 
-            color:#ffffff;
+            color: #ffffff;
 
-            letter-spacing:1px;
+            letter-spacing: 1px;
 
-            text-transform:uppercase;
+            text-transform:
+                uppercase;
         }
 
 
         .paf-text span {
 
-            font-size:0.9rem;
+            font-size: 0.9rem;
 
-            color:#ffd700;
+            color: #ffd700;
         }
 
 
         .logout-btn {
 
-            font-size:0.9rem;
+            font-size: 0.9rem;
 
-            padding:6px 14px;
+            padding: 6px 14px;
 
-            border-radius:20px;
+            border-radius: 20px;
         }
 
 
         .export-menu-btn {
 
-            font-size:18px;
+            font-size: 18px;
 
-            padding:6px 10px;
+            padding: 6px 10px;
 
-            border-radius:50%;
+            border-radius: 50%;
 
-            line-height:1;
+            line-height: 1;
         }
 
 
-        /* ====================================================
+        /* =====================================================
            MAIN CONTAINER
-        ==================================================== */
+        ====================================================== */
 
         .container-main {
 
             background:
                 rgba(255,255,255,0.05);
 
-            border-radius:15px;
+            border-radius: 15px;
 
-            padding:40px;
+            padding: 40px;
 
             box-shadow:
                 0 8px 32px
                 rgba(0,0,0,0.3);
 
-            margin-top:40px;
+            margin-top: 40px;
         }
 
 
         h2 {
 
-            color:#58a6ff;
+            color: #58a6ff;
 
-            font-weight:600;
+            font-weight: 600;
 
-            margin-bottom:25px;
+            margin-bottom: 25px;
         }
 
 
@@ -599,32 +635,32 @@ if (!$result) {
                     #00b4d8
                 );
 
-            border:none;
+            border: none;
 
-            transition:0.3s;
+            transition: 0.3s;
         }
 
 
         .btn-primary:hover {
 
-            opacity:0.9;
+            opacity: 0.9;
         }
 
 
-        /* ====================================================
+        /* =====================================================
            TABLE
-        ==================================================== */
+        ====================================================== */
 
         .table {
 
-            color:#e0e0e0;
+            color: #e0e0e0;
 
             background-color:
                 rgba(255,255,255,0.05);
 
-            border-radius:10px;
+            border-radius: 10px;
 
-            overflow:hidden;
+            overflow: hidden;
         }
 
 
@@ -633,66 +669,61 @@ if (!$result) {
             background-color:
                 rgba(0,123,255,0.2);
 
-            color:#58a6ff;
+            color: #58a6ff;
 
-            text-transform:uppercase;
+            text-transform:
+                uppercase;
         }
 
 
         .table td,
         .table th {
 
-            text-align:center;
+            text-align: center;
 
-            vertical-align:middle;
+            vertical-align: middle;
         }
 
 
         .no-wrap {
 
-            white-space:nowrap;
+            white-space: nowrap;
 
-            min-width:180px;
+            min-width: 180px;
         }
 
-
-        /* Hide DataTables buttons */
 
         .dt-buttons {
 
-            display:none !important;
+            display: none !important;
         }
 
-
-        /* Show entries LEFT */
 
         .dataTables_length {
 
-            float:left;
+            float: left;
 
-            margin-bottom:20px;
+            margin-bottom: 20px;
         }
 
-
-        /* Search RIGHT */
 
         .dataTables_filter {
 
-            float:right;
+            float: right;
 
-            text-align:right;
+            text-align: right;
         }
 
 
-        /* Same row */
+        .dataTables_wrapper
+        .row:nth-child(1) {
 
-        .dataTables_wrapper .row:nth-child(1) {
+            display: flex;
 
-            display:flex;
+            justify-content:
+                space-between;
 
-            justify-content:space-between;
-
-            align-items:center;
+            align-items: center;
         }
 
     </style>
@@ -703,16 +734,15 @@ if (!$result) {
 <body>
 
 
-<!-- ==========================================================
+<!-- =========================================================
      PAF HEADER
-=========================================================== -->
+========================================================= -->
 
 <div class="paf-topbar">
 
 
-    <!-- LEFT SIDE -->
-
     <div class="paf-brand">
+
 
         <img
             src="cmo1.png"
@@ -732,17 +762,18 @@ if (!$result) {
 
         </div>
 
+
     </div>
 
 
-    <!-- RIGHT SIDE -->
-
-    <div class="d-flex align-items-center gap-2">
+    <div
+        class="d-flex align-items-center gap-2">
 
 
         <!-- EXPORT MENU -->
 
         <div class="dropdown">
+
 
             <button
                 class="btn btn-outline-info btn-sm export-menu-btn"
@@ -802,6 +833,7 @@ if (!$result) {
 
                 </li>
 
+
             </ul>
 
         </div>
@@ -828,22 +860,22 @@ if (!$result) {
 
         </a>
 
+
     </div>
+
 
 </div>
 
 
 
-<!-- ==========================================================
-     MAIN CONTENT
-=========================================================== -->
+<!-- =========================================================
+     MAIN
+========================================================= -->
 
 <div class="container container-main">
 
 
-    <!-- ======================================================
-         DELETE SUCCESS MESSAGE
-    ======================================================= -->
+    <!-- SUCCESS MESSAGE -->
 
     <?php if (isset($_GET['deleted'])): ?>
 
@@ -856,14 +888,10 @@ if (!$result) {
     <?php endif; ?>
 
 
-    <!-- TITLE -->
-
     <h2>
         Military Personnel Information
     </h2>
 
-
-    <!-- ADD NEW PERSONNEL -->
 
     <a
         class="btn btn-primary mb-3"
@@ -874,21 +902,17 @@ if (!$result) {
     </a>
 
 
-
-    <!-- ======================================================
+    <!-- =====================================================
          TABLE
-    ======================================================= -->
+    ====================================================== -->
 
     <div class="table-responsive">
+
 
         <table
             id="personnelTable"
             class="table table-hover table-striped">
 
-
-            <!-- ==================================================
-                 TABLE HEADER
-            =================================================== -->
 
             <thead>
 
@@ -921,18 +945,18 @@ if (!$result) {
             </thead>
 
 
-            <!-- ==================================================
-                 TABLE BODY
-            =================================================== -->
+            <!-- =================================================
+                 T BODY
+            ================================================== -->
 
             <tbody>
 
+
                 <?php while ($row = $result->fetch_assoc()): ?>
+
 
                     <tr>
 
-
-                        <!-- ID -->
 
                         <td>
 
@@ -943,8 +967,6 @@ if (!$result) {
                         </td>
 
 
-                        <!-- RANK -->
-
                         <td>
 
                             <?= htmlspecialchars(
@@ -953,8 +975,6 @@ if (!$result) {
 
                         </td>
 
-
-                        <!-- NAME -->
 
                         <td class="no-wrap">
 
@@ -965,8 +985,6 @@ if (!$result) {
                         </td>
 
 
-                        <!-- SERIAL NUMBER -->
-
                         <td>
 
                             <?= htmlspecialchars(
@@ -975,8 +993,6 @@ if (!$result) {
 
                         </td>
 
-
-                        <!-- BRANCH OF SERVICE -->
 
                         <td>
 
@@ -987,8 +1003,6 @@ if (!$result) {
                         </td>
 
 
-                        <!-- COURSES -->
-
                         <td>
 
                             <?= htmlspecialchars(
@@ -997,8 +1011,6 @@ if (!$result) {
 
                         </td>
 
-
-                        <!-- YEAR GRADUATED -->
 
                         <td>
 
@@ -1009,8 +1021,6 @@ if (!$result) {
                         </td>
 
 
-                        <!-- STANDING -->
-
                         <td>
 
                             <?= htmlspecialchars(
@@ -1019,8 +1029,6 @@ if (!$result) {
 
                         </td>
 
-
-                        <!-- CREATED AT -->
 
                         <td>
 
@@ -1046,8 +1054,6 @@ if (!$result) {
                         </td>
 
 
-                        <!-- UPDATED AT -->
-
                         <td>
 
                             <?php
@@ -1072,8 +1078,6 @@ if (!$result) {
                         </td>
 
 
-                        <!-- ACTION -->
-
                         <td>
 
 
@@ -1093,10 +1097,12 @@ if (!$result) {
                             <button
                                 type="button"
                                 class="btn btn-danger btn-sm btn-delete"
+
                                 data-id="<?= htmlspecialchars(
                                     $row['id'],
                                     ENT_QUOTES
                                 ); ?>"
+
                                 data-name="<?= htmlspecialchars(
                                     $row['name'],
                                     ENT_QUOTES
@@ -1112,21 +1118,26 @@ if (!$result) {
 
                     </tr>
 
+
                 <?php endwhile; ?>
+
 
             </tbody>
 
+
         </table>
 
+
     </div>
+
 
 </div>
 
 
 
-<!-- ==========================================================
-     DELETE CONFIRMATION MODAL
-=========================================================== -->
+<!-- =========================================================
+     DELETE MODAL
+========================================================= -->
 
 <div
     class="modal fade"
@@ -1148,9 +1159,8 @@ if (!$result) {
             ">
 
 
-            <!-- MODAL HEADER -->
-
             <div class="modal-header">
+
 
                 <h5 class="modal-title">
 
@@ -1163,30 +1173,29 @@ if (!$result) {
                     type="button"
                     class="btn-close btn-close-white"
                     data-bs-dismiss="modal">
-
                 </button>
+
 
             </div>
 
 
-            <!-- MODAL BODY -->
-
             <div class="modal-body">
+
 
                 Are you sure you want to delete this record?
 
+
                 <br>
+
 
                 <strong
                     id="deletePersonName"
                     style="color:#ffd700;">
-
                 </strong>
+
 
             </div>
 
-
-            <!-- MODAL FOOTER -->
 
             <div class="modal-footer">
 
@@ -1209,20 +1218,23 @@ if (!$result) {
 
                 </a>
 
+
             </div>
 
 
         </div>
 
+
     </div>
+
 
 </div>
 
 
 
-<!-- ==========================================================
+<!-- =========================================================
      JAVASCRIPT
-=========================================================== -->
+========================================================= -->
 
 <script
     src="https://code.jquery.com/jquery-3.7.1.min.js">
@@ -1244,10 +1256,7 @@ if (!$result) {
 </script>
 
 
-
-<!-- ==========================================================
-     DATATABLE BUTTONS
-=========================================================== -->
+<!-- DATATABLE BUTTONS -->
 
 <script
     src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js">
@@ -1297,26 +1306,22 @@ $(document).ready(function () {
     var table =
         $('#personnelTable').DataTable({
 
-            order: [
-                [0, 'asc']
-            ],
+            order: [[0, 'asc']],
 
             pageLength: 5,
 
-            lengthMenu: [
-                5,
-                10,
-                25,
-                50
-            ],
+            lengthMenu:
+                [5, 10, 25, 50],
 
-            dom: 'lBfrtip',
+            dom:
+                'lBfrtip',
 
 
             buttons: [
 
                 {
-                    extend: 'excelHtml5',
+                    extend:
+                        'excelHtml5',
 
                     title:
                         'Military Personnel Information'
@@ -1324,7 +1329,8 @@ $(document).ready(function () {
 
 
                 {
-                    extend: 'pdfHtml5',
+                    extend:
+                        'pdfHtml5',
 
                     title:
                         'Military Personnel Information',
@@ -1338,7 +1344,8 @@ $(document).ready(function () {
 
 
                 {
-                    extend: 'print',
+                    extend:
+                        'print',
 
                     title:
                         'Military Personnel Information'
@@ -1347,7 +1354,6 @@ $(document).ready(function () {
             ]
 
         });
-
 
 
     // ========================================================
@@ -1361,12 +1367,13 @@ $(document).ready(function () {
             e.preventDefault();
 
             table
-                .button('.buttons-excel')
+                .button(
+                    '.buttons-excel'
+                )
                 .trigger();
 
         }
     );
-
 
 
     // ========================================================
@@ -1380,12 +1387,13 @@ $(document).ready(function () {
             e.preventDefault();
 
             table
-                .button('.buttons-pdf')
+                .button(
+                    '.buttons-pdf'
+                )
                 .trigger();
 
         }
     );
-
 
 
     // ========================================================
@@ -1399,12 +1407,13 @@ $(document).ready(function () {
             e.preventDefault();
 
             table
-                .button('.buttons-print')
+                .button(
+                    '.buttons-print'
+                )
                 .trigger();
 
         }
     );
-
 
 
     // ========================================================
@@ -1435,7 +1444,6 @@ $(document).ready(function () {
         );
 
 
-
     // ========================================================
     // DELETE BUTTON
     // ========================================================
@@ -1454,29 +1462,22 @@ $(document).ready(function () {
                 $(this).data('name');
 
 
-            // Show personnel name
-
             deletePersonName.textContent =
                 name
                     ? 'Personnel: ' + name
                     : '';
 
 
-
-            // Delete URL
-
             confirmDeleteBtn.href =
                 '/airforceinfo/delete.php?id=' +
                 encodeURIComponent(id);
 
 
-
-            // Show modal
-
             deleteModal.show();
 
         }
     );
+
 
 });
 
