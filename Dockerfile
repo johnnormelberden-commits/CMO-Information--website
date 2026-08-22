@@ -4,6 +4,8 @@ RUN docker-php-ext-install mysqli
 
 COPY . /var/www/html/
 
-RUN apache2ctl -M 2>&1 | grep -E "mpm_|AH00534" || true
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-EXPOSE 80
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
